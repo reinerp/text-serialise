@@ -7,7 +7,7 @@ import Data.Text.Show.Generic()
 import GHC.Generics
 
 import qualified Prelude
-import Prelude hiding(Show, show, showsPrec, showParen)
+import Prelude hiding(Show, show, showsPrec, showParen, showList)
 import qualified Data.Text.Buildable as B
 import Data.Int
 import Data.Char(ord, isDigit)
@@ -26,12 +26,15 @@ import qualified Data.Typeable
 
 showParen :: Bool -> Builder -> Builder
 showParen !b !p = (if b then "(" else mempty) <> p <> (if b then ")" else mempty)
+{-# INLINABLE showParen #-}
 
 showBuildable :: B.Buildable a => Int -> a -> Builder
 showBuildable _prec a = B.build a
+{-# INLINABLE showBuildable #-}
 
 showPrelude :: Prelude.Show a => Int -> a -> Builder
 showPrelude n a = B.build (Prelude.showsPrec n a "")
+{-# INLINABLE showPrelude #-}
 
 -- Numeric instances (from Data.Text.Buildable)
 instance Show Double  where showPrec = showBuildable
@@ -52,16 +55,27 @@ instance Show Word64  where showPrec = showBuildable
 instance Show Char where
   showPrec _ '\'' = "'\\''"
   showPrec _ c = "\'" <> litChar c <> "\'"
+  {-# INLINABLE showPrec #-}
 
   showList str = "\"" <> litText (L.pack str) <> "\""
+  {-# INLINABLE showList #-}
 instance Show L.Text where
   showPrec _ t = "\"" <> litText t <> "\""
+  {-# INLINABLE showPrec #-}
 instance Show S.Text where
   showPrec _ t = "\"" <> litText (L.fromStrict t) <> "\""
+  {-# INLINABLE showPrec #-}
 instance Show SB.ByteString where
   showPrec _ b = "\"" <> litText (L.pack (SB.unpack b)) <> "\""
+  {-# INLINABLE showPrec #-}
 instance Show LB.ByteString where
   showPrec _ b = "\"" <> litText (L.pack (LB.unpack b)) <> "\""
+  {-# INLINABLE showPrec #-}
+
+-- List instance
+instance Show a => Show [a] where
+  showPrec _ as = showList as
+  {-# INLINABLE showPrec #-}
 
 -- Escaping code (for Char and Text)
 litText :: L.Text -> Builder
@@ -108,20 +122,28 @@ litChar c | c > '\DEL' = "\\" <> B.build (ord c)
 instance Show () where showPrec _ () = "()"
 instance (Show a, Show b) => Show (a, b) where 
   showPrec _ (a, b) = "(" <> show a <> "," <> show b <> ")"
+  {-# INLINABLE showPrec #-}
 instance (Show a, Show b, Show c) => Show (a, b, c) where 
   showPrec _ (a, b, c) = "(" <> show a <> "," <> show b <> "," <> show c <> ")"
+  {-# INLINABLE showPrec #-}
 instance (Show a, Show b, Show c, Show d) => Show (a, b, c, d) where 
   showPrec _ (a, b, c, d) = "(" <> show a <> "," <> show b <> "," <> show c <> "," <> show d <> ")"
+  {-# INLINABLE showPrec #-}
 instance (Show a, Show b, Show c, Show d, Show e) => Show (a, b, c, d, e) where 
   showPrec _ (a, b, c, d, e) = "(" <> show a <> "," <> show b <> "," <> show c <> "," <> show d <> "," <> show e <> ")"
+  {-# INLINABLE showPrec #-}
 instance (Show a, Show b, Show c, Show d, Show e, Show f) => Show (a, b, c, d, e, f) where 
   showPrec _ (a, b, c, d, e, f) = "(" <> show a <> "," <> show b <> "," <> show c <> "," <> show d <> "," <> show e <> "," <> show f <> ")"
+  {-# INLINABLE showPrec #-}
 instance (Show a, Show b, Show c, Show d, Show e, Show f, Show g) => Show (a, b, c, d, e, f, g) where 
   showPrec _ (a, b, c, d, e, f, g) = "(" <> show a <> "," <> show b <> "," <> show c <> "," <> show d <> "," <> show e <> "," <> show f <> "," <> show g <> ")"
+  {-# INLINABLE showPrec #-}
 instance (Show a, Show b, Show c, Show d, Show e, Show f, Show g, Show h) => Show (a, b, c, d, e, f, g, h) where 
   showPrec _ (a, b, c, d, e, f, g, h) = "(" <> show a <> "," <> show b <> "," <> show c <> "," <> show d <> "," <> show e <> "," <> show f <> "," <> show g <> "," <> show h <> ")"
+  {-# INLINABLE showPrec #-}
 instance (Show a, Show b, Show c, Show d, Show e, Show f, Show g, Show h, Show i) => Show (a, b, c, d, e, f, g, h, i) where 
   showPrec _ (a, b, c, d, e, f, g, h, i) = "(" <> show a <> "," <> show b <> "," <> show c <> "," <> show d <> "," <> show e <> "," <> show f <> "," <> show g <> "," <> show h <> "," <> show i <> ")"
+  {-# INLINABLE showPrec #-}
 {-
 instance (Show a, Show b, Show c, Show ) => Show (a, b, c) where 
   showPrec _ (a, b, c) = "(" <> show a <> "," <> show b <> "," <> show c <> "," <> show d <> "," <> show e <> "," <> show f <> "," <> show g <> "," <> show h <> "," <> show i <> "," <> show j <> ")"
@@ -142,8 +164,9 @@ instance Show GHC.Generics.Arity         where showPrec = showPrelude
 instance Show GHC.Generics.Fixity        where showPrec = showPrelude
 instance Show GHC.Generics.Associativity where showPrec = showPrelude
 instance Show Data.Typeable.TyCon        where showPrec = showPrelude
-instance Show Data.Typeable.TypeRep        where showPrec = showPrelude
+instance Show Data.Typeable.TypeRep      where showPrec = showPrelude
 
 -- Generic instances
 instance Show Bool
 instance Show Ordering
+instance (Show a, Show b) => Show (Either a b)
