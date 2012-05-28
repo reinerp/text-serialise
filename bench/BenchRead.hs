@@ -29,7 +29,6 @@ main = defaultMain [
      bench "text-via-string" $ whnf (Prelude.read . T.unpack :: Text -> Number) contents,
      bench "raw" $ whnf plainRead contents2
      ],
-     
   bgroup "Suc (Suc Zero)" [
      bench "text" $ whnf (read :: Text -> Number) "Suc (Suc Zero)",
      bench "string" $ whnf (Prelude.read :: String -> Number) "Suc (Suc Zero)",
