@@ -1,8 +1,8 @@
 {-# LANGUAGE BangPatterns, OverloadedStrings #-}
 module Data.Text.Serialize.Show(Show(..), showParen, showBuildable, showPrelude) where
 
-import Data.Text.Show.Class(Show(..))
-import Data.Text.Show.Generic()
+import Data.Text.Serialize.Show.Class(Show(..))
+import Data.Text.Serialize.Show.Generic()
 
 import GHC.Generics
 

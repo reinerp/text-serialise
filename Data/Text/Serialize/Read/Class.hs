@@ -1,30 +1,57 @@
+{-# LANGUAGE DefaultSignatures, FlexibleContexts, OverloadedStrings, GeneralizedNewtypeDeriving #-}
 module Data.Text.Serialize.Read.Class where
 
+import Control.Monad.Reader
+import Control.Monad
 import Data.Attoparsec.Text
 import GHC.Generics
 import Control.Applicative
 import Prelude hiding (Read(..))
-import Data.Text.Serialize.Read.Lex
+import qualified Data.Text.Serialize.Read.Lex as Lex
+import qualified Data.Text as T
 
 class Read a where
-  readPrec :: ParserP a
+  readPrec :: ParserPrec a
 
-  default readPrec :: (Generic a, GRead (Rep a)) => ParserP a
-  readPrec n = to <$> greadPrec n
+  default readPrec :: (Generic a, GRead (Rep a)) => ParserPrec a
+  readPrec = to <$> greadPrec
 
 class GRead f where
-  greadPrec :: ParserP (a x)
+  greadPrec :: ParserPrec (f x)
+
+----------------------------------------------------------------------------------------------------
+-- ParserPrec and friends
 
 -- | An attoparsec 'Parser' together with parenthesis information.
-type ParserP a = Int -> Parser a
+newtype ParserPrec a = ParserPrec { runParserPrec :: ReaderT Int Parser a }
+  deriving (Monad, Functor, MonadPlus, Applicative, Alternative)
 
-parens :: Int -> ParserP a -> ParserP a
+atto :: Parser a -> ParserPrec a
+atto p = ParserPrec (lift p)
+
+{-# INLINE punc #-}
+punc :: T.Text -> ParserPrec ()
+punc = atto . Lex.lexed . Lex.punc
+
+ident :: T.Text -> ParserPrec ()
+ident name = do
+  name' <- atto (Lex.lexed Lex.ident)
+  guard (name == name')
+
+parens :: ParserPrec a -> ParserPrec a
 parens p = optional
   where
-    optional = p 
+    optional = p <|> mandatory
+    mandatory = paren optional
 
-prec :: Int -> ParserP a -> ParserP a
-prec n p = \n' -> if n' <= n 
-                  then p n 
-                  else empty
+paren :: ParserPrec a -> ParserPrec a
+paren p = punc "(" *> p <* punc ")"
 
+prec :: Int -> ParserPrec a -> ParserPrec a
+prec n (ParserPrec (ReaderT p)) = ParserPrec . ReaderT $ \n' -> if n' <= n then p n else empty
+
+step :: ParserPrec a -> ParserPrec a
+step (ParserPrec p) = ParserPrec (local (+1) p)
+
+reset :: ParserPrec a -> ParserPrec a
+reset (ParserPrec p) = ParserPrec (local (const 0) p)

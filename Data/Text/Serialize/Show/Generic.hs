@@ -4,7 +4,7 @@
 
 module Data.Text.Serialize.Show.Generic( ) where
 
-import Data.Text.Show.Class
+import Data.Text.Serialize.Show.Class
 import GHC.Generics
 import Data.Monoid
 import qualified Data.Text as SText

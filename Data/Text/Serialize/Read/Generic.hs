@@ -1,60 +1,61 @@
+{-# LANGUAGE OverloadedStrings, TypeOperators, FlexibleInstances, ScopedTypeVariables #-}
 module Data.Text.Serialize.Read.Generic where
 
 import Control.Applicative
 
+import Data.String
+import GHC.Generics hiding (prec)
 import Data.Text.Serialize.Read.Class
+import qualified Data.Text as T
+import Prelude hiding (Read(..))
 
 appPrec = 10
 
 instance GRead f => GRead (M1 D m f) where
   {-# INLINE greadPrec #-}
-  greadPrec prec = M1 <$> greadPrec prec
+  greadPrec = M1 <$> greadPrec
 
 instance (GRead f, GRead g) => GRead (f :+: g) where
   {-# INLINE greadPrec #-}
-  greadPrec prec = (L1 <$> greadPrec prec) <|> (R1 <$> greadPrec prec)
+  greadPrec = (L1 <$> greadPrec) <|> (R1 <$> greadPrec)
 
 instance (Constructor c, GReadFields f) => GRead (M1 C c f) where
   {-# INLINE greadPrec #-}
   greadPrec =
     let 
       con = undefined :: x c f y
-      name = SText.pack (conName con)
+      name = T.pack (conName con)
       isRecord = conIsRecord con
       fixity = conFixity con
       isEmpty = gisEmpty (undefined :: x f y)
     in
     if isRecord 
     then
-      \n (M1 fields) ->
-        parens $ prec if prec > appPrec
-        then fromText ("(" <> name <> " {") <> greadCommas fields <> "})"
-        else fromText (name <> " {") <> greadCommas fields <> singleton '}'
+      parens $ prec appPrec $
+        M1 <$> (ident name *> punc "{" *> greadCommas <* punc "}")
     else
       if isEmpty
       then 
-        \_ _ -> fromText name
+        parens $ (ident name *> (M1 <$> greadSpaces))
       else
         case fixity of
           Prefix ->
-            \prec (M1 fields) -> 
-            if prec > appPrec
-            then fromText ("(" <> name <> " ") <> greadSpaces fields <> singleton ')'
-            else fromText (name <> " ") <> greadSpaces fields
-          Infix assoc opPrec -> error "Infix not yet supported!"                       
+            parens $ prec appPrec $
+              M1 <$> (ident name *> greadSpaces)
+          Infix assoc opPrec -> panic "Infix not yet supported!"                       
 
 -- fields of a constructor
 class GReadFields f where
   -- read the fields, separated by commas, and with record syntax
-  greadCommas :: f x -> Builder
+  greadCommas :: ParserPrec (f x)
   -- read the fields, separated by spaces
-  greadSpaces :: f x -> Builder
+  greadSpaces :: ParserPrec (f x)
   -- is the set of fields empty?
   gisEmpty :: t f x -> Bool
 
 instance GReadFields U1 where
-  greadCommas = error "read commas on empty!"
-  greadSpaces = error "read spaces on empty!"
+  greadCommas = panic "read commas on empty!"
+  greadSpaces = return U1
   {-# INLINE gisEmpty #-}
   gisEmpty _ = True
 
@@ -64,36 +65,18 @@ instance (Read field, Selector sel) => GReadFields (M1 S sel (K1 i field)) where
     let
       name = fromString $ selName (undefined :: x sel (K1 i field) y)
     in
-     \(M1 (K1 field)) -> name <> " = " <> readPrec 0 field
+     (M1 . K1) <$> (ident name *> punc "=" *> reset readPrec)
   {-# INLINE greadSpaces #-}
-  greadSpaces (M1 (K1 field)) = readPrec (appPrec+1) field
+  greadSpaces = (M1 . K1) <$> (step readPrec)
   {-# INLINE gisEmpty #-}
   gisEmpty _ = False
 
 instance (GReadFields f, GReadFields g) => GReadFields (f :*: g) where
   {-# INLINE greadCommas #-}
-  greadCommas (f :*: g) = greadCommas f <> ", " <> greadCommas g
+  greadCommas = (:*:) <$> greadCommas <* punc "," <*> greadCommas
   {-# INLINE greadSpaces #-}
-  greadSpaces (f :*: g) = greadSpaces f <> singleton ' ' <> greadSpaces g
+  greadSpaces = (:*:) <$> greadSpaces <*> greadSpaces
   {-# INLINE gisEmpty #-}
   gisEmpty _ = False
 
 panic msg = error ("Data.Text.Read.Generic: " ++ msg)
-
--- reading empty constructors
-{-instance Constructor c => GRead (C1 c U1) where
-  greadPrec _ (M1 U1) = fromString (conName (undefined :: x c U1 z))
--}
---reading 
---class GReadFields f where
---  greadCon :: 
-
-{-
-data Empty
---deriving instance Prelude.Read Empty
-
-data A = A Int Int | B | C { foo :: Bool, bar :: Bool } | D {} | (:+) { plus :: Int } | A :* A
-  deriving(Generic, Prelude.Read)
-
-data Z a = Z a
-  deriving(Generic)-}

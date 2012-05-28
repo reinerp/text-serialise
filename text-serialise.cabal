@@ -25,6 +25,8 @@ library
     Data.Text.Serialize.Show.Generic
   build-depends:       
     base ==4.5.*, 
+    attoparsec ==0.10.*,
+    mtl ==2.1.*,
     ghc-prim ==0.2.*, 
     text-format ==0.3.*, 
     bytestring ==0.9.*, 

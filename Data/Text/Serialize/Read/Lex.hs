@@ -1,5 +1,5 @@
 -- Adapted from Text.Read.Lex
-{-# LANGUAGE OverloadedStrings, DeriveGeneric, BangPatterns #-}
+{-# LANGUAGE OverloadedStrings, DeriveGeneric, BangPatterns, DoAndIfThenElse, PatternGuards #-}
 module Data.Text.Serialize.Read.Lex(
   lexed,
   punc,
@@ -50,6 +50,7 @@ punc str
   | otherwise = do
     str' <- operator
     guard (str == str')
+{-# INLINABLE [1] punc #-}
 
 -- | Operators other than the reserved operators
 operator :: Parser T.Text
