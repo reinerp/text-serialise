@@ -1,5 +1,5 @@
 {-# LANGUAGE DefaultSignatures, FlexibleContexts, OverloadedStrings #-}
-module Data.Text.Show.Class where
+module Data.Text.Serialize.Show.Class where
 
 import GHC.Generics
 import Data.Text.Lazy.Builder

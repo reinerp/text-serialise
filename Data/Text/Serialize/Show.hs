@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns, OverloadedStrings #-}
-module Data.Text.Show(Show(..), showParen, showBuildable, showPrelude) where
+module Data.Text.Serialize.Show(Show(..), showParen, showBuildable, showPrelude) where
 
 import Data.Text.Show.Class(Show(..))
 import Data.Text.Show.Generic()

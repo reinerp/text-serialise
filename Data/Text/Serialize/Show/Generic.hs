@@ -2,7 +2,7 @@
              OverloadedStrings, DefaultSignatures, FlexibleContexts, 
              BangPatterns #-}
 
-module Data.Text.Show.Generic( ) where
+module Data.Text.Serialize.Show.Generic( ) where
 
 import Data.Text.Show.Class
 import GHC.Generics

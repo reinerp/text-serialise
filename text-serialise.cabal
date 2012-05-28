@@ -16,10 +16,13 @@ cabal-version:       >=1.8
 
 library
   exposed-modules:     
-    Data.Text.Show
+    Data.Text.Serialize.Read,
+    Data.Text.Serialize.Show
   other-modules:
-    Data.Text.Show.Class,
-    Data.Text.Show.Generic
+    Data.Text.Serialize.Read.Class,
+    Data.Text.Serialize.Read.Generic,
+    Data.Text.Serialize.Show.Class,
+    Data.Text.Serialize.Show.Generic
   build-depends:       
     base ==4.5.*, 
     ghc-prim ==0.2.*, 
