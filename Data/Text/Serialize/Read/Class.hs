@@ -14,8 +14,8 @@ class Read a where
   readPrec :: ParserPrec a
 
   default readPrec :: (Generic a, GRead (Rep a)) => ParserPrec a
-  {-# INLINE readPrec #-}
   readPrec = \n -> to <$> greadPrec n
+  {-# INLINE readPrec #-}
 
 class GRead f where
   greadPrec :: ParserPrec (f x)
@@ -26,21 +26,22 @@ class GRead f where
 -- | An attoparsec 'Parser' together with parenthesis information.
 type ParserPrec a = Int -> Parser a
 
-{-# INLINE atto #-}
 atto :: Parser a -> ParserPrec a
 atto p = const p
+{-# INLINE atto #-}
 
-{-# INLINE parens #-}
-parens :: ParserPrec a -> ParserPrec a
-parens p = optional
+-- | Consumes all whitespace and parens before p, and just the matching parens after p.
+parens_ :: ParserPrec a -> ParserPrec a
+parens_ p = optional
   where
-    optional n = p n <|> mandatory n
-    mandatory = paren optional
+    optional n = lexed (p n <|> mandatory n)
+    mandatory = paren' optional
+{-# INLINE parens_ #-}
 
-{-# INLINE paren #-}
-paren :: ParserPrec a -> ParserPrec a
-paren p n = punc '(' *> p 0 <* punc ')'
+paren' :: ParserPrec a -> ParserPrec a
+paren' p n = punc' '(' *> p 0 <* punc ')'
+{-# INLINE paren' #-}
 
-{-# INLINE prec #-}
 prec :: Int -> ParserPrec a -> ParserPrec a
 prec n p n' = if n' <= n then p n else empty
+{-# INLINE prec #-}

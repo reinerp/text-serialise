@@ -3,9 +3,11 @@
 module Data.Text.Serialize.Read.Lex(
   lexed,
   punc,
+  punc',
   symbolPunc,
 --  operator,
   ident,
+  ident',
 --  litChar,
 --  litString,
  ) where
@@ -31,8 +33,12 @@ lexed p = skipSpace >> p
 {-# INLINE lexed #-}
 
 punc :: Char -> Parser ()
-punc = void . lexed . char
+punc = lexed . punc'
 {-# INLINABLE punc #-}
+
+punc' :: Char -> Parser ()
+punc' = void . char
+{-# INLINABLE punc' #-}
 
 symbolPunc :: Char -> Parser ()
 symbolPunc c = void . lexed $ char c `notFollowedBy` isSymbolChar
@@ -50,8 +56,16 @@ notFollowedBy p f = do
   return a
 {-# INLINE notFollowedBy #-}
 
+-- ident' plus a whitespace check
 ident :: T.Text -> Parser ()
-ident t = void . lexed $ string t `notFollowedBy` isIdfChar
+ident t = void . lexed $ ident' t
+
+-- Naming convention: a ' suffix means that it doesn't expect whitespace at the start. 
+-- (This can be useful for factoring out the whitespace check).
+
+-- No whitespace check: just identifier
+ident' :: T.Text -> Parser ()
+ident' t = void $ string t `notFollowedBy` isIdfChar
 
 isIdfChar :: Char -> Bool
 isIdfChar c = isAlphaNum c || c == '_' || c == '\''

@@ -14,7 +14,7 @@ appPrec = 10
 
 instance GRead f => GRead (M1 D m f) where
   {-# INLINE greadPrec #-}
-  greadPrec n = M1 <$> greadPrec n
+  greadPrec = parens_ $ \n -> M1 <$> greadPrec n
 
 instance (GRead f, GRead g) => GRead (f :+: g) where
   {-# INLINE greadPrec #-}
@@ -33,17 +33,17 @@ instance (Constructor c, GReadFields f) => GRead (M1 C c f) where
     in
     if isRecord 
     then
-      parens $ prec appPrec $
-        \n -> M1 <$> (ident name *> punc '{' *> greadCommas n <* punc '}')
+      prec appPrec $
+        \n -> M1 <$> (ident' name *> punc '{' *> greadCommas n <* punc '}')
     else
       if isEmpty
       then 
-        parens $ \n -> ident name *> (M1 <$> greadSpaces n)
+        \n -> ident' name *> (M1 <$> greadSpaces n)
       else
         case fixity of
           Prefix ->
-            parens $ prec appPrec $
-              \n -> M1 <$> (ident name *> greadSpaces n)
+            prec appPrec $
+              \n -> M1 <$> (ident' name *> greadSpaces n)
           Infix assoc opPrec -> panic "Infix not yet supported!"                       
 
 -- fields of a constructor
