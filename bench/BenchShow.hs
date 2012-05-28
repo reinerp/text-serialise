@@ -6,7 +6,7 @@ import GHC.Generics (Generic)
 import qualified Data.Text as S
 import qualified Data.Text.Lazy.Builder as B
 import qualified Data.Text.Lazy as T
-import qualified Data.Text.Show as T
+import qualified Data.Text.Serialize.Show as T
 import Data.Typeable
 
 import Debug.Trace

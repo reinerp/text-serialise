@@ -3,10 +3,11 @@
 module Data.Text.Serialize.Read.Lex(
   lexed,
   punc,
-  operator,
+  symbolPunc,
+--  operator,
   ident,
-  litChar,
-  litString,
+--  litChar,
+--  litString,
  ) where
 
 import GHC.Generics
@@ -27,31 +28,35 @@ import Prelude hiding(lex)
 -- | @lexed p = skipSpace >> p@
 lexed :: Parser a -> Parser a
 lexed p = skipSpace >> p
+{-# INLINE lexed #-}
 
-{-# RULES 
-"punc ," punc (T.pack ",") = void $ char ','
-"punc ;" punc (T.pack ";") = void $ char ';'
-"punc (" punc (T.pack "(") = void $ char '('
-"punc )" punc (T.pack ")") = void $ char ')'
-"punc [" punc (T.pack "[") = void $ char '['
-"punc ]" punc (T.pack "]") = void $ char ']'
-"punc {" punc (T.pack "{") = void $ char '{'
-"punc }" punc (T.pack "}") = void $ char '}'
-"punc `" punc (T.pack "`") = void $ char '`'
- #-}
+punc :: Char -> Parser ()
+punc = void . lexed . char
+{-# INLINABLE punc #-}
 
--- | Parse the given punctuation symbol
-punc :: T.Text -> Parser ()
-punc str
-  | Just (c, r) <- T.uncons str
-  , T.null r
-  , not (isSymbolChar c)
-    = void $ char c
-  | otherwise = do
-    str' <- operator
-    guard (str == str')
-{-# INLINABLE [1] punc #-}
+symbolPunc :: Char -> Parser ()
+symbolPunc c = void . lexed $ char c `notFollowedBy` isSymbolChar
+{-# INLINABLE symbolPunc #-}
 
+isSymbolChar :: Char -> Bool
+isSymbolChar = inClass "!@#$%&*+./<=>?\\^|:~-"
+{-# INLINABLE isSymbolChar #-}
+
+notFollowedBy :: Parser a -> (Char -> Bool) -> Parser a
+notFollowedBy p f = do
+  a <- p
+  valid <- (False <$ satisfy f) <|> pure True
+  guard valid
+  return a
+{-# INLINE notFollowedBy #-}
+
+ident :: T.Text -> Parser ()
+ident t = void . lexed $ string t `notFollowedBy` isIdfChar
+
+isIdfChar :: Char -> Bool
+isIdfChar c = isAlphaNum c || c == '_' || c == '\''
+
+{-
 -- | Operators other than the reserved operators
 operator :: Parser T.Text
 operator = do 
@@ -65,9 +70,9 @@ operator = do
 -- | Operator or punctuation
 operator' :: Parser T.Text
 operator' = takeWhile1 isSymbolChar
+-}
 
-isSymbolChar = inClass "!@#$%&*+./<=>?\\^|:~-"
-
+{-
 -- | Identifiers
 ident :: Parser T.Text
 ident = checkedIdent =<< scan True step
@@ -82,7 +87,6 @@ ident = checkedIdent =<< scan True step
 
     -- Identifiers can start with a '_'
     isIdsChar c = isAlpha c || c == '_'
-    isIdfChar c = isAlphaNum c || c `elem` "_'"
 
 -- | Character literal
 litChar :: Parser Char
@@ -234,3 +238,4 @@ litString = char '"' *> body mempty
          '&'           -> do return ()
          _ | isSpace c -> do skipSpace; _ <- char '\\'; return ()
          _             -> do empty
+-}

@@ -7,14 +7,15 @@ import Data.Attoparsec.Text
 import GHC.Generics
 import Control.Applicative
 import Prelude hiding (Read(..))
-import qualified Data.Text.Serialize.Read.Lex as Lex
+import Data.Text.Serialize.Read.Lex
 import qualified Data.Text as T
 
 class Read a where
   readPrec :: ParserPrec a
 
   default readPrec :: (Generic a, GRead (Rep a)) => ParserPrec a
-  readPrec = to <$> greadPrec
+  {-# INLINE readPrec #-}
+  readPrec = \n -> to <$> greadPrec n
 
 class GRead f where
   greadPrec :: ParserPrec (f x)
@@ -23,38 +24,23 @@ class GRead f where
 -- ParserPrec and friends
 
 -- | An attoparsec 'Parser' together with parenthesis information.
-newtype ParserPrec a = ParserPrec { unParserPrec :: ReaderT Int Parser a }
-  deriving (Monad, Functor, MonadPlus, Applicative, Alternative)
+type ParserPrec a = Int -> Parser a
 
-runParserPrec :: ParserPrec a -> Int -> Parser a
-runParserPrec = runReaderT . unParserPrec
-
+{-# INLINE atto #-}
 atto :: Parser a -> ParserPrec a
-atto p = ParserPrec (lift p)
+atto p = const p
 
-{-# INLINE punc #-}
-punc :: T.Text -> ParserPrec ()
-punc = atto . Lex.lexed . Lex.punc
-
-ident :: T.Text -> ParserPrec ()
-ident name = do
-  name' <- atto (Lex.lexed Lex.ident)
-  guard (name == name')
-
+{-# INLINE parens #-}
 parens :: ParserPrec a -> ParserPrec a
 parens p = optional
   where
-    optional = p <|> mandatory
+    optional n = p n <|> mandatory n
     mandatory = paren optional
 
+{-# INLINE paren #-}
 paren :: ParserPrec a -> ParserPrec a
-paren p = punc "(" *> reset p <* punc ")"
+paren p n = punc '(' *> p 0 <* punc ')'
 
+{-# INLINE prec #-}
 prec :: Int -> ParserPrec a -> ParserPrec a
-prec n (ParserPrec (ReaderT p)) = ParserPrec . ReaderT $ \n' -> if n' <= n then p n else empty
-
-step :: ParserPrec a -> ParserPrec a
-step (ParserPrec p) = ParserPrec (local (+1) p)
-
-reset :: ParserPrec a -> ParserPrec a
-reset (ParserPrec p) = ParserPrec (local (const 0) p)
+prec n p n' = if n' <= n then p n else empty

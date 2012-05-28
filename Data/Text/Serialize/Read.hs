@@ -17,4 +17,4 @@ read t = case readEither t of
   Right a -> a
 
 readEither :: Read a => Text -> Either String a
-readEither = parseOnly (runParserPrec readPrec 0)
+readEither = parseOnly (readPrec 0)
