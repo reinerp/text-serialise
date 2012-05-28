@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings, DeriveGeneric, BangPatterns, DoAndIfThenElse, PatternGuards #-}
 module Data.Text.Serialize.Read.Lex(
   lexed,
+  skipSpace,
   punc,
   punc',
   symbolPunc,

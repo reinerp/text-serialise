@@ -1,4 +1,4 @@
-{-# LANGUAGE DefaultSignatures, FlexibleContexts, OverloadedStrings, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE BangPatterns, DefaultSignatures, FlexibleContexts, OverloadedStrings, GeneralizedNewtypeDeriving #-}
 module Data.Text.Serialize.Read.Class where
 
 import Control.Monad.Reader
@@ -32,15 +32,23 @@ atto p = const p
 
 -- | Consumes all whitespace and parens before p, and just the matching parens after p.
 parens_ :: ParserPrec a -> ParserPrec a
-parens_ p = optional
-  where
-    optional n = lexed (p n <|> mandatory n)
-    mandatory = paren' optional
+parens_ p n = do
+  np <- openParens_
+  a <- p (if np > 0 then 0 else n)
+  closeParens np
+  return a
 {-# INLINE parens_ #-}
 
-paren' :: ParserPrec a -> ParserPrec a
-paren' p n = punc' '(' *> p 0 <* punc ')'
-{-# INLINE paren' #-}
+-- | Consumes all the open parens and whitespace, returning how many open parens there were.
+openParens_ :: Parser Int
+openParens_ = skipSpace *> go 0
+  where
+    go !acc = (char '(' *> skipSpace *> go (acc + 1)) 
+              <|> return acc
+
+closeParens :: Int -> Parser ()
+closeParens 0 = return ()
+closeParens n = skipSpace *> char ')' *> closeParens (n-1)
 
 prec :: Int -> ParserPrec a -> ParserPrec a
 prec n p n' = if n' <= n then p n else empty
