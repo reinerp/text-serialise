@@ -47,3 +47,16 @@ benchmark bench-show
     ghc-prim,
     QuickCheck
   ghc-options: -O2
+
+benchmark bench-read
+  type: exitcode-stdio-1.0
+  hs-source-dirs: bench
+  main-is: BenchRead.hs
+  build-depends: 
+    base, 
+    criterion, 
+    text-serialise, 
+    text, 
+    ghc-prim,
+    attoparsec
+  ghc-options: -O2
