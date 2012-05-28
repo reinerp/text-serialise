@@ -21,6 +21,7 @@ library
   other-modules:
     Data.Text.Serialize.Read.Class,
     Data.Text.Serialize.Read.Generic,
+    Data.Text.Serialize.Read.Lex,
     Data.Text.Serialize.Show.Class,
     Data.Text.Serialize.Show.Generic
   build-depends:       

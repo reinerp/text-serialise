@@ -23,8 +23,11 @@ class GRead f where
 -- ParserPrec and friends
 
 -- | An attoparsec 'Parser' together with parenthesis information.
-newtype ParserPrec a = ParserPrec { runParserPrec :: ReaderT Int Parser a }
+newtype ParserPrec a = ParserPrec { unParserPrec :: ReaderT Int Parser a }
   deriving (Monad, Functor, MonadPlus, Applicative, Alternative)
+
+runParserPrec :: ParserPrec a -> Int -> Parser a
+runParserPrec = runReaderT . unParserPrec
 
 atto :: Parser a -> ParserPrec a
 atto p = ParserPrec (lift p)
@@ -45,7 +48,7 @@ parens p = optional
     mandatory = paren optional
 
 paren :: ParserPrec a -> ParserPrec a
-paren p = punc "(" *> p <* punc ")"
+paren p = punc "(" *> reset p <* punc ")"
 
 prec :: Int -> ParserPrec a -> ParserPrec a
 prec n (ParserPrec (ReaderT p)) = ParserPrec . ReaderT $ \n' -> if n' <= n then p n else empty
