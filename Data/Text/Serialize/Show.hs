@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns, OverloadedStrings #-}
-module Data.Text.Serialize.Show(Show(..), showParen, buildPrec, preludeShowPrec) where
+module Data.Text.Serialize.Show(Show(..), showLazyText, showParen, buildPrec, preludeShowPrec) where
 
 import Data.Text.Serialize.Show.Class(Show(..))
 import Data.Text.Serialize.Show.Generic()
@@ -15,7 +15,7 @@ import qualified Data.ByteString.Char8 as SB
 import qualified Data.ByteString.Lazy.Char8 as LB
 import qualified Data.Text as S
 import qualified Data.Text.Lazy as L
-import Data.Text.Lazy.Builder(Builder)
+import Data.Text.Lazy.Builder(Builder, toLazyText)
 import Data.Array
 import Data.Monoid
 import Data.Word
@@ -23,6 +23,10 @@ import Data.Word
 -- just for instances
 import qualified GHC.Generics
 import qualified Data.Typeable
+
+showLazyText :: Show a => a -> L.Text
+showLazyText = toLazyText . show
+{-# INLINABLE showLazyText #-}
 
 showParen :: Bool -> Builder -> Builder
 showParen !b !p = (if b then "(" else mempty) <> p <> (if b then ")" else mempty)

@@ -34,29 +34,49 @@ library
     text ==0.11.*,
     array ==0.4.*
 
+test-suite test
+  hs-source-dirs: tests
+  main-is: Test.hs
+  type: exitcode-stdio-1.0
+
+  build-depends:
+    base ==4.5.*,
+    HUnit <1.3,
+    QuickCheck >= 2.4.0.1,
+    test-framework >= 0.3.3 && < 0.7,
+    test-framework-hunit ==0.2.*,
+    test-framework-quickcheck2 >= 0.2.9 && < 0.3,
+    text >=0.11.0.5 && <0.12,
+
+    text-serialise
+
 benchmark bench-show
   type: exitcode-stdio-1.0
-  hs-source-dirs: bench
+  hs-source-dirs: tests
   main-is: BenchShow.hs
   build-depends: 
-    base, 
-    criterion, 
-    random,
-    text-serialise, 
-    text, 
-    ghc-prim,
-    QuickCheck
+    base ==4.5.*, 
+    criterion >=0.5 && <0.7, 
+    ghc-prim ==0.2.*,
+    random ==1.0.*,
+    QuickCheck >=2.4.0.1 && <2.5,
+    text >=0.11.0.5 && <0.12, 
+
+    text-serialise
   ghc-options: -O2
 
 benchmark bench-read
   type: exitcode-stdio-1.0
-  hs-source-dirs: bench
+  hs-source-dirs: tests
   main-is: BenchRead.hs
   build-depends: 
-    base, 
-    criterion, 
-    text-serialise, 
-    text, 
-    ghc-prim,
-    attoparsec
+    attoparsec ==0.10.*,
+    base ==4.5.*, 
+    criterion >=0.5 && <0.7, 
+    ghc-prim ==0.2.*,
+    random ==1.0.*,
+    QuickCheck >=2.4.0.1 && <2.5,
+    text >=0.11.0.5 && <0.12, 
+
+    text-serialise
   ghc-options: -O2
