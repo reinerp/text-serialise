@@ -3,7 +3,7 @@ module Main (main) where
 
 import Types(Type(..), types)
 
-import Data.Text.Serialize.Show
+import Data.Text.Serialize
 import Prelude hiding (Show(..))
 import qualified Prelude
 import Test.HUnit (assertBool)

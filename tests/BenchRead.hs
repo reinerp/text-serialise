@@ -7,7 +7,7 @@ import Control.Applicative
 import Data.Attoparsec.Text hiding (Number)
 import Criterion.Main
 import GHC.Generics
-import Data.Text.Serialize.Read
+import Data.Text.Serialize
 import qualified Prelude
 import Prelude hiding (Read(..), read)
 import Data.Text(Text)

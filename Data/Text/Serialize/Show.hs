@@ -1,5 +1,13 @@
 {-# LANGUAGE BangPatterns, OverloadedStrings #-}
-module Data.Text.Serialize.Show(Show(..), showLazyText, showParen, buildPrec, preludeShowPrec) where
+module Data.Text.Serialize.Show(
+  Show(..), 
+  showLazyText, 
+  -- * Functions for custom 'Show' instances
+  showParen, 
+  buildPrec, 
+  preludeShowPrec,
+  defaultShowPrefix,
+  ) where
 
 import Data.Text.Serialize.Show.Class(Show(..))
 import Data.Text.Serialize.Show.Generic()
