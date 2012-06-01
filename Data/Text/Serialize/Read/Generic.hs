@@ -13,16 +13,16 @@ import Prelude hiding (Read(..))
 appPrec = 10
 
 instance GRead f => GRead (M1 D m f) where
-  {-# INLINE greadPrec #-}
-  greadPrec = parens_ $ \n -> M1 <$> greadPrec n
+  {-# INLINE gparsePrec #-}
+  gparsePrec = parens_ $ \n -> M1 <$> gparsePrec n
 
 instance (GRead f, GRead g) => GRead (f :+: g) where
-  {-# INLINE greadPrec #-}
-  greadPrec n = (L1 <$> greadPrec n) <|> (R1 <$> greadPrec n)
+  {-# INLINE gparsePrec #-}
+  gparsePrec n = (L1 <$> gparsePrec n) <|> (R1 <$> gparsePrec n)
 
 instance (Constructor c, GReadFields f) => GRead (M1 C c f) where
-  {-# INLINE greadPrec #-}
-  greadPrec =
+  {-# INLINE gparsePrec #-}
+  gparsePrec =
     let 
       con = undefined :: x c f y
       {-# NOINLINE name #-}
@@ -69,9 +69,9 @@ instance (Read field, Selector sel) => GReadFields (M1 S sel (K1 i field)) where
       {-# NOINLINE name #-}
       name = fromString $ selName (undefined :: x sel (K1 i field) y)
     in
-     \_ -> (M1 . K1) <$> (ident name *> symbolPunc '=' *> readPrec 0)
+     \_ -> (M1 . K1) <$> (ident name *> symbolPunc '=' *> parsePrec 0)
   {-# INLINE greadSpaces #-}
-  greadSpaces = \n -> (M1 . K1) <$> readPrec (n+1)
+  greadSpaces = \n -> (M1 . K1) <$> parsePrec (n+1)
   {-# INLINE gisEmpty #-}
   gisEmpty _ = False
 

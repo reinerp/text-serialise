@@ -11,14 +11,14 @@ import Data.Text.Serialize.Read.Lex
 import qualified Data.Text as T
 
 class Read a where
-  readPrec :: ParserPrec a
+  parsePrec :: ParserPrec a
 
-  default readPrec :: (Generic a, GRead (Rep a)) => ParserPrec a
-  readPrec = \n -> to <$> greadPrec n
-  {-# INLINE readPrec #-}
+  default parsePrec :: (Generic a, GRead (Rep a)) => ParserPrec a
+  parsePrec = \n -> to <$> gparsePrec n
+  {-# INLINE parsePrec #-}
 
 class GRead f where
-  greadPrec :: ParserPrec (f x)
+  gparsePrec :: ParserPrec (f x)
 
 ----------------------------------------------------------------------------------------------------
 -- ParserPrec and friends
