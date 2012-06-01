@@ -25,5 +25,15 @@ class Show a where
   show = showPrec 0
   {-# INLINABLE show #-}
 
+  showPrefix :: a -> Builder
+
+  default showPrefix :: (Generic a, GShow (Rep a)) => a -> Builder
+  showPrefix a = gshowPrefix (from a)
+  {-# INLINE showPrefix #-}
+
+-- | Are we in the context of a function application?
+type AppPrec = Bool
+
 class GShow f where 
   gshowPrec :: Int -> f x -> Builder
+  gshowPrefix :: f x -> Builder

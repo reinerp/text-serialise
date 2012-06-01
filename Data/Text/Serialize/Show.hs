@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns, OverloadedStrings #-}
-module Data.Text.Serialize.Show(Show(..), showParen, showBuildable, showPrelude) where
+module Data.Text.Serialize.Show(Show(..), showParen, buildPrec, preludeShowPrec) where
 
 import Data.Text.Serialize.Show.Class(Show(..))
 import Data.Text.Serialize.Show.Generic()
@@ -28,58 +28,73 @@ showParen :: Bool -> Builder -> Builder
 showParen !b !p = (if b then "(" else mempty) <> p <> (if b then ")" else mempty)
 {-# INLINABLE showParen #-}
 
-showBuildable :: B.Buildable a => Int -> a -> Builder
-showBuildable _prec a = B.build a
-{-# INLINABLE showBuildable #-}
+buildPrec :: B.Buildable a => Int -> a -> Builder
+buildPrec _prec a = B.build a
+{-# INLINABLE buildPrec #-}
 
-showPrelude :: Prelude.Show a => Int -> a -> Builder
-showPrelude n a = B.build (Prelude.showsPrec n a "")
-{-# INLINABLE showPrelude #-}
+preludeShowPrec :: Prelude.Show a => Int -> a -> Builder
+preludeShowPrec n a = B.build (Prelude.showsPrec n a "")
+{-# INLINABLE preludeShowPrec #-}
+
+defaultShowPrefix :: Show a => a -> Builder
+defaultShowPrefix = showPrec 11
+{-# INLINABLE defaultShowPrefix #-}
 
 -- Numeric instances (from Data.Text.Buildable)
-instance Show Double  where showPrec = showBuildable
-instance Show Float   where showPrec = showBuildable
-instance Show Int     where showPrec = showBuildable
-instance Show Int8    where showPrec = showBuildable
-instance Show Int16   where showPrec = showBuildable
-instance Show Int32   where showPrec = showBuildable
-instance Show Int64   where showPrec = showBuildable
-instance Show Integer where showPrec = showBuildable
-instance Show Word    where showPrec = showBuildable
-instance Show Word8   where showPrec = showBuildable
-instance Show Word16  where showPrec = showBuildable
-instance Show Word32  where showPrec = showBuildable
-instance Show Word64  where showPrec = showBuildable
+instance Show Double  where showPrec = buildPrec; showPrefix = defaultShowPrefix
+instance Show Float   where showPrec = buildPrec; showPrefix = defaultShowPrefix
+instance Show Int     where showPrec = buildPrec; showPrefix = defaultShowPrefix
+instance Show Int8    where showPrec = buildPrec; showPrefix = defaultShowPrefix
+instance Show Int16   where showPrec = buildPrec; showPrefix = defaultShowPrefix
+instance Show Int32   where showPrec = buildPrec; showPrefix = defaultShowPrefix
+instance Show Int64   where showPrec = buildPrec; showPrefix = defaultShowPrefix
+instance Show Integer where showPrec = buildPrec; showPrefix = defaultShowPrefix
+instance Show Word    where showPrec = buildPrec; showPrefix = defaultShowPrefix
+instance Show Word8   where showPrec = buildPrec; showPrefix = defaultShowPrefix
+instance Show Word16  where showPrec = buildPrec; showPrefix = defaultShowPrefix
+instance Show Word32  where showPrec = buildPrec; showPrefix = defaultShowPrefix
+instance Show Word64  where showPrec = buildPrec; showPrefix = defaultShowPrefix
 
 -- Custom string-like instances
 instance Show Char where
   showPrec _ '\'' = "'\\''"
   showPrec _ c = "\'" <> litChar c <> "\'"
   {-# INLINABLE showPrec #-}
-
   showList str = "\"" <> litText (L.pack str) <> "\""
   {-# INLINABLE showList #-}
+  showPrefix = defaultShowPrefix
+  {-# INLINABLE showPrefix #-}
 instance Show L.Text where
   showPrec _ t = "\"" <> litText t <> "\""
   {-# INLINABLE showPrec #-}
+  showPrefix = defaultShowPrefix
+  {-# INLINABLE showPrefix #-}
 instance Show S.Text where
   showPrec _ t = "\"" <> litText (L.fromStrict t) <> "\""
   {-# INLINABLE showPrec #-}
+  showPrefix = defaultShowPrefix
+  {-# INLINABLE showPrefix #-}
 instance Show SB.ByteString where
   showPrec _ b = "\"" <> litText (L.pack (SB.unpack b)) <> "\""
   {-# INLINABLE showPrec #-}
+  showPrefix = defaultShowPrefix
+  {-# INLINABLE showPrefix #-}
 instance Show LB.ByteString where
   showPrec _ b = "\"" <> litText (L.pack (LB.unpack b)) <> "\""
   {-# INLINABLE showPrec #-}
+  showPrefix = defaultShowPrefix
+  {-# INLINABLE showPrefix #-}
 
 -- List instance
 instance Show a => Show [a] where
   showPrec _ as = showList as
   {-# INLINABLE showPrec #-}
+  showPrefix = defaultShowPrefix
+  {-# INLINABLE showPrefix #-}
 
 -- Escaping code (for Char and Text)
 litText :: L.Text -> Builder
-litText t = 
+litText t =
   case L.break isEscape t of
     (l, r) -> case L.uncons r of
       Nothing -> B.build l
@@ -91,7 +106,7 @@ litText t =
   where
     isEscape :: Char -> Bool
     isEscape c = c == '\\' || c == '"' || c < ' ' || c >= '\DEL'
-    
+
     escape :: Char -> Builder
     escape '\\' = "\\\\"
     escape '"' = "\\\""
@@ -120,51 +135,58 @@ litChar c | c > '\DEL' = "\\" <> B.build (ord c)
 
 -- Custom tuple instances
 instance Show () where showPrec _ () = "()"
-instance (Show a, Show b) => Show (a, b) where 
+instance (Show a, Show b) => Show (a, b) where
   showPrec _ (a, b) = "(" <> show a <> "," <> show b <> ")"
   {-# INLINABLE showPrec #-}
-instance (Show a, Show b, Show c) => Show (a, b, c) where 
+  showPrefix = defaultShowPrefix
+  {-# INLINABLE showPrefix #-}
+instance (Show a, Show b, Show c) => Show (a, b, c) where
   showPrec _ (a, b, c) = "(" <> show a <> "," <> show b <> "," <> show c <> ")"
   {-# INLINABLE showPrec #-}
-instance (Show a, Show b, Show c, Show d) => Show (a, b, c, d) where 
+  showPrefix = defaultShowPrefix
+  {-# INLINABLE showPrefix #-}
+instance (Show a, Show b, Show c, Show d) => Show (a, b, c, d) where
   showPrec _ (a, b, c, d) = "(" <> show a <> "," <> show b <> "," <> show c <> "," <> show d <> ")"
   {-# INLINABLE showPrec #-}
-instance (Show a, Show b, Show c, Show d, Show e) => Show (a, b, c, d, e) where 
+  showPrefix = defaultShowPrefix
+  {-# INLINABLE showPrefix #-}
+instance (Show a, Show b, Show c, Show d, Show e) => Show (a, b, c, d, e) where
   showPrec _ (a, b, c, d, e) = "(" <> show a <> "," <> show b <> "," <> show c <> "," <> show d <> "," <> show e <> ")"
   {-# INLINABLE showPrec #-}
-instance (Show a, Show b, Show c, Show d, Show e, Show f) => Show (a, b, c, d, e, f) where 
+  showPrefix = defaultShowPrefix
+  {-# INLINABLE showPrefix #-}
+instance (Show a, Show b, Show c, Show d, Show e, Show f) => Show (a, b, c, d, e, f) where
   showPrec _ (a, b, c, d, e, f) = "(" <> show a <> "," <> show b <> "," <> show c <> "," <> show d <> "," <> show e <> "," <> show f <> ")"
   {-# INLINABLE showPrec #-}
-instance (Show a, Show b, Show c, Show d, Show e, Show f, Show g) => Show (a, b, c, d, e, f, g) where 
+  showPrefix = defaultShowPrefix
+  {-# INLINABLE showPrefix #-}
+instance (Show a, Show b, Show c, Show d, Show e, Show f, Show g) => Show (a, b, c, d, e, f, g) where
   showPrec _ (a, b, c, d, e, f, g) = "(" <> show a <> "," <> show b <> "," <> show c <> "," <> show d <> "," <> show e <> "," <> show f <> "," <> show g <> ")"
   {-# INLINABLE showPrec #-}
-instance (Show a, Show b, Show c, Show d, Show e, Show f, Show g, Show h) => Show (a, b, c, d, e, f, g, h) where 
+  showPrefix = defaultShowPrefix
+  {-# INLINABLE showPrefix #-}
+instance (Show a, Show b, Show c, Show d, Show e, Show f, Show g, Show h) => Show (a, b, c, d, e, f, g, h) where
   showPrec _ (a, b, c, d, e, f, g, h) = "(" <> show a <> "," <> show b <> "," <> show c <> "," <> show d <> "," <> show e <> "," <> show f <> "," <> show g <> "," <> show h <> ")"
   {-# INLINABLE showPrec #-}
-instance (Show a, Show b, Show c, Show d, Show e, Show f, Show g, Show h, Show i) => Show (a, b, c, d, e, f, g, h, i) where 
+  showPrefix = defaultShowPrefix
+  {-# INLINABLE showPrefix #-}
+instance (Show a, Show b, Show c, Show d, Show e, Show f, Show g, Show h, Show i) => Show (a, b, c, d, e, f, g, h, i) where
   showPrec _ (a, b, c, d, e, f, g, h, i) = "(" <> show a <> "," <> show b <> "," <> show c <> "," <> show d <> "," <> show e <> "," <> show f <> "," <> show g <> "," <> show h <> "," <> show i <> ")"
   {-# INLINABLE showPrec #-}
-{-
-instance (Show a, Show b, Show c, Show ) => Show (a, b, c) where 
-  showPrec _ (a, b, c) = "(" <> show a <> "," <> show b <> "," <> show c <> "," <> show d <> "," <> show e <> "," <> show f <> "," <> show g <> "," <> show h <> "," <> show i <> "," <> show j <> ")"
-instance (Show a, Show b, Show c) => Show (a, b, c) where 
-  showPrec _ (a, b, c) = "(" <> show a <> "," <> show b <> "," <> show c <> "," <> show d <> "," <> show e <> "," <> show f <> "," <> show g <> "," <> show h <> "," <> show i <> "," <> show j <> "," <> show k <> ")"
-instance (Show a, Show b, Show c) => Show (a, b, c) where 
-  showPrec _ (a, b, c) = "(" <> show a <> "," <> show b <> "," <> show c <> "," <> show d <> "," <> show e <> "," <> show f <> "," <> show g <> "," <> show h <> "," <> show i <> "," <> show j <> "," <> show k <> "," <> show l <> ")"
-instance (Show a, Show b, Show c) => Show (a, b, c) where 
-  showPrec _ (a, b, c) = "(" <> show a <> "," <> show b <> "," <> show c <> "," <> show d <> "," <> show e <> "," <> show f <> "," <> show g <> "," <> show h <> "," <> show i <> "," <> show j <> "," <> show k <> "," <> show l <> "," <> show m <> ")"
-instance (Show a, Show b, Show c) => Show (a, b, c) where 
-  showPrec _ (a, b, c) = "(" <> show a <> "," <> show b <> "," <> show c <> "," <> show d <> "," <> show e <> "," <> show f <> "," <> show g <> "," <> show h <> "," <> show i <> "," <> show j <> "," <> show k <> "," <> show l <> "," <> show m <> "," <> show n <> ")"
-instance (Show a, Show b, Show c) => Show (a, b, c) where 
-  showPrec _ (a, b, c) = "(" <> show a <> "," <> show b <> "," <> show c <> "," <> show d <> "," <> show e <> "," <> show f <> "," <> show g <> "," <> show h <> "," <> show i <> "," <> show j <> "," <> show k <> "," <> show l <> "," <> show m <> "," <> show n <> "," <> show o <> ")"
--}                                               
+  showPrefix = defaultShowPrefix
+  {-# INLINABLE showPrefix #-}
+instance (Show a, Show b, Show c, Show d, Show e, Show f, Show g, Show h, Show i, Show j) => Show (a, b, c, d, e, f, g, h, i, j) where
+  showPrec _ (a, b, c, d, e, f, g, h, i, j) = "(" <> show a <> "," <> show b <> "," <> show c <> "," <> show d <> "," <> show e <> "," <> show f <> "," <> show g <> "," <> show h <> "," <> show i <> "," <> show j <> ")"
+  {-# INLINABLE showPrec #-}
+  showPrefix = defaultShowPrefix
+  {-# INLINABLE showPrefix #-}
 
 -- Prelude instances
-instance Show GHC.Generics.Arity         where showPrec = showPrelude
-instance Show GHC.Generics.Fixity        where showPrec = showPrelude
-instance Show GHC.Generics.Associativity where showPrec = showPrelude
-instance Show Data.Typeable.TyCon        where showPrec = showPrelude
-instance Show Data.Typeable.TypeRep      where showPrec = showPrelude
+instance Show GHC.Generics.Arity         where showPrec = preludeShowPrec; showPrefix = defaultShowPrefix
+instance Show GHC.Generics.Fixity        where showPrec = preludeShowPrec; showPrefix = defaultShowPrefix
+instance Show GHC.Generics.Associativity where showPrec = preludeShowPrec; showPrefix = defaultShowPrefix
+instance Show Data.Typeable.TyCon        where showPrec = preludeShowPrec; showPrefix = defaultShowPrefix
+instance Show Data.Typeable.TypeRep      where showPrec = preludeShowPrec; showPrefix = defaultShowPrefix
 
 -- Generic instances
 instance Show Bool
