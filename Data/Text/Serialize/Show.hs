@@ -9,6 +9,7 @@ module Data.Text.Serialize.Show(
   defaultShowPrefix,
   ) where
 
+import Data.Text.Serialize.Common
 import Data.Text.Serialize.Show.Class(Show(..))
 import Data.Text.Serialize.Show.Generic()
 
@@ -23,6 +24,7 @@ import qualified Data.ByteString.Char8 as SB
 import qualified Data.ByteString.Lazy.Char8 as LB
 import qualified Data.Text as S
 import qualified Data.Text.Lazy as L
+import qualified Data.Double.Conversion.Text as C
 import Data.Text.Lazy.Builder(Builder, toLazyText)
 import Data.Array
 import Data.Monoid
@@ -40,11 +42,15 @@ showParen :: Bool -> Builder -> Builder
 showParen !b !p = (if b then "(" else mempty) <> p <> (if b then ")" else mempty)
 {-# INLINABLE showParen #-}
 
-buildPrec :: B.Buildable a => Int -> a -> Builder
+buildPrec :: B.Buildable a => Prec -> a -> Builder
 buildPrec _prec a = B.build a
 {-# INLINABLE buildPrec #-}
 
-preludeShowPrec :: Prelude.Show a => Int -> a -> Builder
+numericBuildPrec :: (Ord a, Num a, B.Buildable a) => Prec -> a -> Builder
+numericBuildPrec prec a = showParen (prec > minusPrec && a < 0) (B.build a)
+{-# INLINABLE numericBuildPrec #-}
+
+preludeShowPrec :: Prelude.Show a => Prec -> a -> Builder
 preludeShowPrec n a = B.build (Prelude.showsPrec n a "")
 {-# INLINABLE preludeShowPrec #-}
 
@@ -53,19 +59,25 @@ defaultShowPrefix = showPrec 11
 {-# INLINABLE defaultShowPrefix #-}
 
 -- Numeric instances (from Data.Text.Buildable)
-instance Show Double  where showPrec = buildPrec; showPrefix = defaultShowPrefix
-instance Show Float   where showPrec = buildPrec; showPrefix = defaultShowPrefix
-instance Show Int     where showPrec = buildPrec; showPrefix = defaultShowPrefix
-instance Show Int8    where showPrec = buildPrec; showPrefix = defaultShowPrefix
-instance Show Int16   where showPrec = buildPrec; showPrefix = defaultShowPrefix
-instance Show Int32   where showPrec = buildPrec; showPrefix = defaultShowPrefix
-instance Show Int64   where showPrec = buildPrec; showPrefix = defaultShowPrefix
-instance Show Integer where showPrec = buildPrec; showPrefix = defaultShowPrefix
-instance Show Word    where showPrec = buildPrec; showPrefix = defaultShowPrefix
-instance Show Word8   where showPrec = buildPrec; showPrefix = defaultShowPrefix
-instance Show Word16  where showPrec = buildPrec; showPrefix = defaultShowPrefix
-instance Show Word32  where showPrec = buildPrec; showPrefix = defaultShowPrefix
-instance Show Word64  where showPrec = buildPrec; showPrefix = defaultShowPrefix
+instance Show Int     where showPrec = numericBuildPrec; showPrefix = defaultShowPrefix
+instance Show Int8    where showPrec = numericBuildPrec; showPrefix = defaultShowPrefix
+instance Show Int16   where showPrec = numericBuildPrec; showPrefix = defaultShowPrefix
+instance Show Int32   where showPrec = numericBuildPrec; showPrefix = defaultShowPrefix
+instance Show Int64   where showPrec = numericBuildPrec; showPrefix = defaultShowPrefix
+instance Show Integer where showPrec = numericBuildPrec; showPrefix = defaultShowPrefix
+instance Show Word    where showPrec = numericBuildPrec; showPrefix = defaultShowPrefix
+instance Show Word8   where showPrec = numericBuildPrec; showPrefix = defaultShowPrefix
+instance Show Word16  where showPrec = numericBuildPrec; showPrefix = defaultShowPrefix
+instance Show Word32  where showPrec = numericBuildPrec; showPrefix = defaultShowPrefix
+instance Show Word64  where showPrec = numericBuildPrec; showPrefix = defaultShowPrefix
+
+-- Float instances (from Data.Double.Conversion.Text)
+instance Show Double where 
+  showPrec prec a = showParen (prec > minusPrec && a < 0) (B.build . C.toShortest $ a)
+  showPrefix = defaultShowPrefix
+instance Show Float where 
+  showPrec prec a = showParen (prec > minusPrec && a < 0) (B.build . C.toShortest . realToFrac $ a)
+  showPrefix = defaultShowPrefix
 
 -- Custom string-like instances
 instance Show Char where

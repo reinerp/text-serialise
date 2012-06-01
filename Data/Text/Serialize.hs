@@ -16,5 +16,6 @@ module Data.Text.Serialize(
   ) where
 
 import qualified Prelude
-import Data.Text.Serialize.Show
+import Data.Text.Serialize.Common
 import Data.Text.Serialize.Read
+import Data.Text.Serialize.Show
