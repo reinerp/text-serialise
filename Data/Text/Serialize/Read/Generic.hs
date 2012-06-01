@@ -6,13 +6,11 @@ import Control.Applicative
 import Data.String
 import GHC.Generics hiding (prec)
 import Data.Attoparsec.Text(Parser)
+import Data.Text.Serialize.Common
 import Data.Text.Serialize.Read.Class
 import Data.Text.Serialize.Read.Lex
 import qualified Data.Text as T
 import Prelude hiding (Read(..))
-
-appPrec = 10
-__ = undefined
 
 instance GRead f => GRead (M1 D m f) where
   {-# INLINE gparsePrec #-}

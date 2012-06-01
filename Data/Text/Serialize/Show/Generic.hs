@@ -9,6 +9,7 @@
 
 module Data.Text.Serialize.Show.Generic() where
 
+import Data.Text.Serialize.Common
 import Data.Text.Serialize.Show.Class
 import GHC.Generics
 import Data.Monoid
@@ -18,9 +19,6 @@ import Data.Text.Lazy.Builder
 
 import qualified Prelude
 import Prelude hiding (Show(..))
-
-appPrec = 10
-__ = undefined
 
 instance GShow f => GShow (M1 D m f) where
   {-# INLINE gshowPrec #-}

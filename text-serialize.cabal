@@ -18,6 +18,7 @@ library
   exposed-modules:     
     Data.Text.Serialize
   other-modules:
+    Data.Text.Serialize.Common,
     Data.Text.Serialize.Read,
     Data.Text.Serialize.Read.Class,
     Data.Text.Serialize.Read.Generic,
