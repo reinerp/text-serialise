@@ -158,7 +158,11 @@ litChar c | c > '\DEL' = "\\" <> B.build (ord c)
           | otherwise = "\\" <> B.build (escapes ! ord c)
 
 -- Custom tuple instances
-instance Show () where showPrec _ () = "()"
+instance Show () where 
+  showPrec _ () = "()"
+  {-# INLINABLE showPrec #-}
+  showPrefix = defaultShowPrefix
+  {-# INLINABLE showPrefix #-}
 instance (Show a, Show b) => Show (a, b) where
   showPrec _ (a, b) = "(" <> show a <> "," <> show b <> ")"
   {-# INLINABLE showPrec #-}
