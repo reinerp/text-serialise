@@ -17,8 +17,13 @@ class Read a where
   parsePrec = \n -> to <$> gparsePrec n
   {-# INLINE parsePrec #-}
 
+  parsePrefix :: Parser a
+  default parsePrefix :: (Generic a, GRead (Rep a)) => Parser a
+  parsePrefix = to <$> gparsePrefix
+
 class GRead f where
   gparsePrec :: ParserPrec (f x)
+  gparsePrefix :: Parser (f x)
 
 ----------------------------------------------------------------------------------------------------
 -- ParserPrec and friends
@@ -49,6 +54,15 @@ openParens_ = skipSpace *> go 0
 closeParens :: Int -> Parser ()
 closeParens 0 = return ()
 closeParens n = skipSpace *> char ')' *> closeParens (n-1)
+
+paren :: Parser a -> Parser a
+paren p = do
+  skipSpace
+  char '('
+  a <- p
+  skipSpace
+  char ')'
+  return a
 
 prec :: Int -> ParserPrec a -> ParserPrec a
 prec n p n' = if n' <= n then p n else empty

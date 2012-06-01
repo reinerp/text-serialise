@@ -47,7 +47,7 @@ instance (Constructor c, GShowFields f) => GShow (M1 C c f) where
     | numFields == 0 =
         \_ _ -> fromText name
     | Infix assoc opPrec <- fixity, numFields == 2 =
-        error "Infix not yet supported!"
+        panic "Infix not yet supported!"
     | otherwise =
         \prec (M1 fields) -> 
           if prec > appPrec
@@ -61,7 +61,8 @@ instance (Constructor c, GShowFields f) => GShow (M1 C c f) where
     numFields = gnumFields (__ :: f y)
 
   {-# INLINE gshowPrefix #-}
-  gshowPrefix = \(M1 fields) -> fromText ("(" <> name <> " ") <> gshowSpaces fields <> singleton ')'
+  gshowPrefix = 
+    \(M1 fields) -> fromText ("(" <> name <> " ") <> gshowSpacesPrefix fields <> singleton ')'
    where
     name = SText.pack (conName (__ :: x c f y))
 
@@ -71,12 +72,15 @@ class GShowFields f where
   gshowCommas :: f x -> Builder
   -- show the fields, separated by spaces
   gshowSpaces :: f x -> Builder
+  -- show the fields, separated by spaces, in showPrefix mode
+  gshowSpacesPrefix :: f x -> Builder
   -- is the set of fields empty?
   gnumFields :: f x -> Int
 
 instance GShowFields U1 where
-  gshowCommas = error "show commas on empty!"
-  gshowSpaces = error "show spaces on empty!"
+  gshowCommas = panic "show commas on empty!"
+  gshowSpaces = panic "show spaces on empty!"
+  gshowSpacesPrefix _ = ""
   {-# INLINE gnumFields #-}
   gnumFields _ = 0
 
@@ -89,6 +93,8 @@ instance (Show field, Selector sel) => GShowFields (M1 S sel (K1 i field)) where
      \(M1 (K1 field)) -> name <> " = " <> showPrec 0 field
   {-# INLINE gshowSpaces #-}
   gshowSpaces (M1 (K1 field)) = showPrec (appPrec+1) field
+  {-# INLINE gshowSpacesPrefix #-}
+  gshowSpacesPrefix (M1 (K1 field)) = showPrefix field
   {-# INLINE gnumFields #-}
   gnumFields _ = 1
 
@@ -97,10 +103,12 @@ instance (GShowFields f, GShowFields g) => GShowFields (f :*: g) where
   gshowCommas (f :*: g) = gshowCommas f <> ", " <> gshowCommas g
   {-# INLINE gshowSpaces #-}
   gshowSpaces (f :*: g) = gshowSpaces f <> singleton ' ' <> gshowSpaces g
+  {-# INLINE gshowSpacesPrefix #-}
+  gshowSpacesPrefix (f :*: g) = gshowSpacesPrefix f <> singleton ' ' <> gshowSpacesPrefix g
   {-# INLINE gnumFields #-}
   gnumFields _ = gnumFields (__ :: f x) + gnumFields (__ :: g x)
 
-panic msg = error ("Data.Text.Show.Generic: " ++ msg)
+panic msg = error ("Data.Text.Serialize.Show.Generic: " ++ msg)
 
 -- showing empty constructors
 {-instance Constructor c => GShow (C1 c U1) where
