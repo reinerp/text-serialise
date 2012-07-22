@@ -1,6 +1,7 @@
 -- Adapted from Text.Read.Lex
 {-# LANGUAGE OverloadedStrings, DeriveGeneric, BangPatterns, DoAndIfThenElse, PatternGuards #-}
 module Data.Text.Serialize.Read.Lex(
+  
   lexed,
   skipSpace,
   punc,
