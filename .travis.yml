@@ -1,1 +1,5 @@
 language: haskell
+
+# Force travis to install test dependencies
+install:
+ - cabal update && cabal install --enable-tests
